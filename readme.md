@@ -1,3 +1,1 @@
 # medclinic-api
-
-# teste
