@@ -31,6 +31,15 @@ export class UserService {
     return this.toResponseDTO(user);
   }
 
+  public async getById(id: string): Promise<UserResponseDTO> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw new Error('Authenticated user was not found.');
+    }
+
+    return this.toResponseDTO(user);
+  }
+
   private validateRegistrationInput(name: string, email: string, password: string): void {
     if (!name || !email || !password) {
       throw new Error('Name, email and password are required.');

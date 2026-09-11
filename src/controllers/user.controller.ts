@@ -22,4 +22,17 @@ export class UserController {
       next(error);
     }
   };
+
+  public me = async (request: Request, response: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!request.auth) {
+        throw new Error('Authentication is required.');
+      }
+
+      const user = await this.userService.getById(request.auth.id);
+      response.status(200).json({ user });
+    } catch (error: unknown) {
+      next(error);
+    }
+  };
 }
