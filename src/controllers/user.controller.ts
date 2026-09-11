@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 
 import type { CreateUserDTO } from '../dtos/user.dto';
 import { UserService } from '../services/user.service';
+import { AppError } from '../utils/app-error';
 
 export class UserController {
   private readonly userService: UserService;
@@ -26,7 +27,7 @@ export class UserController {
   public me = async (request: Request, response: Response, next: NextFunction): Promise<void> => {
     try {
       if (!request.auth) {
-        throw new Error('Authentication is required.');
+        throw new AppError(401, 'Authentication is required.');
       }
 
       const user = await this.userService.getById(request.auth.id);
