@@ -1,6 +1,7 @@
 import type { CreateUserDTO, UserResponseDTO } from '../dtos/user.dto';
 import { User, UserRole } from '../entities/user.entity';
 import { UserRepository } from '../repositories/user.repository';
+import { hashPassword } from '../utils/password';
 
 export class UserService {
   private readonly userRepository: UserRepository;
@@ -23,7 +24,7 @@ export class UserService {
     const user = await this.userRepository.create({
       name,
       email,
-      passwordHash: userData.password,
+      passwordHash: await hashPassword(userData.password),
       role: userData.role ?? UserRole.ATTENDANT,
     });
 
