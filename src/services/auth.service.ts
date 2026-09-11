@@ -4,6 +4,7 @@ import type { AuthTokenPayload, LoginDTO, LoginResponseDTO } from '../dtos/auth.
 import { env } from '../config/env';
 import { UserRepository } from '../repositories/user.repository';
 import { comparePassword } from '../utils/password';
+import { AppError } from '../utils/app-error';
 
 export class AuthService {
   private readonly userRepository: UserRepository;
@@ -17,7 +18,7 @@ export class AuthService {
     const user = await this.userRepository.findByEmailWithPassword(email);
 
     if (!user || !(await comparePassword(credentials.password, user.passwordHash))) {
-      throw new Error('Invalid credentials.');
+      throw new AppError(401, 'Invalid credentials.');
     }
 
     const payload: AuthTokenPayload = { id: user.id, role: user.role };
