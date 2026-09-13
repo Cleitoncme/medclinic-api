@@ -1,6 +1,22 @@
 import type { ErrorRequestHandler, NextFunction, Request, Response } from 'express';
+import { QueryFailedError } from 'typeorm';
 
 import { AppError } from '../utils/app-error';
+
+function isDuplicateEmailError(error: unknown): boolean {
+  if (
+    !(error instanceof QueryFailedError) ||
+    typeof error.driverError !== 'object' ||
+    !error.driverError
+  ) {
+    return false;
+  }
+
+  return (
+    Reflect.get(error.driverError, 'code') === '23505' &&
+    Reflect.get(error.driverError, 'constraint') === 'UQ_users_email'
+  );
+}
 
 export const notFoundHandler = (
   request: Request,
@@ -22,6 +38,14 @@ export const errorHandler: ErrorRequestHandler = (
     response.status(error.statusCode).json({
       statusCode: error.statusCode,
       message: error.message,
+    });
+    return;
+  }
+
+  if (isDuplicateEmailError(error)) {
+    response.status(409).json({
+      statusCode: 409,
+      message: 'Email is already registered.',
     });
     return;
   }

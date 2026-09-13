@@ -12,10 +12,10 @@ export class UserService {
   }
 
   public async register(userData: CreateUserDTO): Promise<UserResponseDTO> {
+    this.validateRegistrationInput(userData);
+
     const name = userData.name.trim();
     const email = userData.email.trim().toLowerCase();
-
-    this.validateRegistrationInput(name, email, userData.password);
 
     const existingUser = await this.userRepository.findByEmail(email);
     if (existingUser) {
@@ -26,7 +26,7 @@ export class UserService {
       name,
       email,
       passwordHash: await hashPassword(userData.password),
-      role: userData.role ?? UserRole.ATTENDANT,
+      role: UserRole.ATTENDANT,
     });
 
     return this.toResponseDTO(user);
@@ -41,8 +41,22 @@ export class UserService {
     return this.toResponseDTO(user);
   }
 
-  private validateRegistrationInput(name: string, email: string, password: string): void {
-    if (!name || !email || !password) {
+  private validateRegistrationInput(userData: CreateUserDTO): void {
+    if (
+      typeof userData !== 'object' ||
+      userData === null ||
+      Array.isArray(userData) ||
+      typeof userData.name !== 'string' ||
+      typeof userData.email !== 'string' ||
+      typeof userData.password !== 'string'
+    ) {
+      throw new AppError(400, 'Name, email and password are required.');
+    }
+
+    const name = userData.name.trim();
+    const email = userData.email.trim();
+
+    if (!name || !email || !userData.password) {
       throw new AppError(400, 'Name, email and password are required.');
     }
 
@@ -50,7 +64,7 @@ export class UserService {
       throw new AppError(400, 'Email must have a valid format.');
     }
 
-    if (password.length < 8) {
+    if (userData.password.length < 8) {
       throw new AppError(400, 'Password must contain at least 8 characters.');
     }
   }
