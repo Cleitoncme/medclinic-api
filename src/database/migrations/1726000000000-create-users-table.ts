@@ -5,7 +5,9 @@ export class CreateUsersTable1726000000000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto"');
-    await queryRunner.query("CREATE TYPE \"public\".\"users_role_enum\" AS ENUM('ADMIN', 'ATTENDANT')");
+    await queryRunner.query(
+      'CREATE TYPE "public"."users_role_enum" AS ENUM(\'ADMIN\', \'ATTENDANT\')',
+    );
     await queryRunner.query(`
       CREATE TABLE "users" (
         "id" uuid NOT NULL DEFAULT gen_random_uuid(),

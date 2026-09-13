@@ -1,10 +1,9 @@
-import { UserRole } from '../entities/user.entity';
+import type { UserRole } from '../entities/user.entity';
 
 export interface CreateUserDTO {
   name: string;
   email: string;
   password: string;
-  role?: UserRole;
 }
 
 export interface UserResponseDTO {

@@ -14,6 +14,8 @@ export class AuthService {
   }
 
   public async login(credentials: LoginDTO): Promise<LoginResponseDTO> {
+    this.validateLoginInput(credentials);
+
     const email = credentials.email.trim().toLowerCase();
     const user = await this.userRepository.findByEmailWithPassword(email);
 
@@ -25,5 +27,19 @@ export class AuthService {
     const options: SignOptions = { expiresIn: env.jwt.expiresIn as SignOptions['expiresIn'] };
 
     return { token: jwt.sign(payload, env.jwt.secret, options) };
+  }
+
+  private validateLoginInput(credentials: LoginDTO): void {
+    if (
+      typeof credentials !== 'object' ||
+      credentials === null ||
+      Array.isArray(credentials) ||
+      typeof credentials.email !== 'string' ||
+      typeof credentials.password !== 'string' ||
+      !credentials.email.trim() ||
+      !credentials.password
+    ) {
+      throw new AppError(400, 'Email and password are required.');
+    }
   }
 }

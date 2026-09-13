@@ -7,6 +7,9 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "seed:admin": "npm run build && node dist/database/seed-admin.js",
+    "migration:run": "npm run build && typeorm migration:run -d dist/database/data-source.js",
+    "migration:revert": "npm run build && typeorm migration:revert -d dist/database/data-source.js",
     "lint": "eslint src",
     "format:check": "prettier --check .",
     "format": "prettier --write ."

@@ -16,18 +16,17 @@ API REST da etapa 1 do sistema de gerenciamento de clínica médica. Este projet
 ## Pré-requisitos
 
 - Node.js 20 ou superior
-- PostgreSQL em execução
-- Um banco de dados vazio, por exemplo `medclinic`
+- Docker Desktop (recomendado para executar o PostgreSQL localmente), ou PostgreSQL em execução
 
 ## Instalação e configuração
 
 ```bash
 git clone https://github.com/Cleitoncme/medclinic-api.git
 cd medclinic-api
-npm install
+npm ci
 ```
 
-Crie o arquivo `.env` a partir de `.env.example` e informe as credenciais locais do PostgreSQL:
+Crie o arquivo `.env` a partir de `.env.example` e informe as credenciais locais do PostgreSQL. Não versione esse arquivo.
 
 ```env
 PORT=3333
@@ -40,18 +39,57 @@ JWT_SECRET=use-uma-chave-longa-e-segura
 JWT_EXPIRES_IN=1h
 ```
 
-Compile o projeto e aplique a migration que cria a tabela `users`:
+## PostgreSQL com Docker
+
+Com o `.env` configurado, inicie o banco local:
 
 ```bash
-npm run build
-npx typeorm migration:run -d dist/database/data-source.js
+docker compose up -d
+```
+
+O serviço usa PostgreSQL 16, cria automaticamente o banco definido por `DATABASE_NAME` na primeira inicialização e persiste os dados no volume `postgres_data`. Para verificar se o banco está pronto:
+
+```bash
+docker compose ps
+```
+
+Para parar o contêiner sem remover seus dados:
+
+```bash
+docker compose down
+```
+
+## Banco de dados e migrations
+
+Com o PostgreSQL em execução, aplique a migration que cria a tabela `users`:
+
+```bash
+npm run migration:run
 ```
 
 Para desfazer a última migration:
 
 ```bash
-npx typeorm migration:revert -d dist/database/data-source.js
+npm run migration:revert
 ```
+
+Os dois scripts compilam o projeto e usam o DataSource em `dist/database/data-source.js`.
+
+## Administrador de demonstração
+
+O cadastro público sempre cria o perfil `ATTENDANT`; ele não aceita a criação de administradores. Para demonstrar as rotas RBAC, configure temporariamente as variáveis abaixo no `.env` e execute:
+
+```env
+ADMIN_NAME=Admin Demo
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=uma-senha-com-ao-menos-8-caracteres
+```
+
+```bash
+npm run seed:admin
+```
+
+O script não contém senha fixa e não cria uma nova conta caso já exista um usuário com o e-mail configurado.
 
 ## Execução e qualidade
 
@@ -105,9 +143,9 @@ Authorization: Bearer <token>
 
 Perfis disponíveis:
 
-| Perfil | Permissões nesta etapa |
-| --- | --- |
-| `ADMIN` | Acessa rotas autenticadas e `GET /admin/ping`. |
+| Perfil      | Permissões nesta etapa                                              |
+| ----------- | ------------------------------------------------------------------- |
+| `ADMIN`     | Acessa rotas autenticadas e `GET /admin/ping`.                      |
 | `ATTENDANT` | Acessa rotas autenticadas, mas recebe 403 em rotas administrativas. |
 
 ## Endpoints
@@ -130,12 +168,11 @@ Resposta `200`:
 {
   "name": "Ana Silva",
   "email": "ana@example.com",
-  "password": "SenhaSegura123",
-  "role": "ADMIN"
+  "password": "SenhaSegura123"
 }
 ```
 
-`name`, `email` e `password` são obrigatórios. O e-mail precisa ser válido, a senha precisa ter no mínimo oito caracteres e `role` é opcional (o padrão é `ATTENDANT`).
+`name`, `email` e `password` são obrigatórios e precisam ser strings. O e-mail precisa ser válido, a senha precisa ter no mínimo oito caracteres e o perfil criado é sempre `ATTENDANT`. Corpos ausentes ou com valores de tipos inválidos retornam `400`.
 
 Resposta `201`:
 
@@ -145,7 +182,7 @@ Resposta `201`:
     "id": "uuid",
     "name": "Ana Silva",
     "email": "ana@example.com",
-    "role": "ADMIN",
+    "role": "ATTENDANT",
     "createdAt": "2026-09-10T00:00:00.000Z"
   }
 }

@@ -6,7 +6,9 @@ import type { AuthTokenPayload } from '../dtos/auth.dto';
 import { UserRole } from '../entities/user.entity';
 import { AppError } from '../utils/app-error';
 
-function isAuthTokenPayload(payload: string | JwtPayload): payload is JwtPayload & AuthTokenPayload {
+function isAuthTokenPayload(
+  payload: string | JwtPayload,
+): payload is JwtPayload & AuthTokenPayload {
   return (
     typeof payload !== 'string' &&
     typeof payload.id === 'string' &&
@@ -14,11 +16,7 @@ function isAuthTokenPayload(payload: string | JwtPayload): payload is JwtPayload
   );
 }
 
-export function authenticate(
-  request: Request,
-  _response: Response,
-  next: NextFunction,
-): void {
+export function authenticate(request: Request, _response: Response, next: NextFunction): void {
   try {
     const authorization = request.headers.authorization;
     if (!authorization?.startsWith('Bearer ')) {
@@ -38,6 +36,10 @@ export function authenticate(
     request.auth = { id: payload.id, role: payload.role };
     next();
   } catch (error: unknown) {
-    next(error instanceof AppError ? error : new AppError(401, 'Authentication token is invalid or expired.'));
+    next(
+      error instanceof AppError
+        ? error
+        : new AppError(401, 'Authentication token is invalid or expired.'),
+    );
   }
 }
