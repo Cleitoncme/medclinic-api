@@ -29,7 +29,7 @@ npm ci
 Crie o arquivo `.env` a partir de `.env.example` e informe as credenciais locais do PostgreSQL. Não versione esse arquivo.
 
 ```env
-PORT=3333
+PORT=3000
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
 DATABASE_NAME=medclinic
@@ -106,7 +106,117 @@ npm run lint
 npm run format:check
 ```
 
-Por padrão, a API responde em `http://localhost:3333`. Use `GET /health` para confirmar que o Express está ativo.
+Por padrão, a API responde em `http://localhost:3000`. Use `GET /health` para confirmar que o Express está ativo.
+
+## Validação no Postman
+
+Execute a API com `npm run dev` e mantenha esse terminal aberto durante os testes. No Postman, crie um ambiente com a variável abaixo:
+
+```text
+baseUrl = http://localhost:3000
+```
+
+Em cada teste, clique em **New → HTTP Request**, selecione o método indicado à esquerda da URL, preencha a URL e clique em **Send**.
+
+### 1. Confirmar que a API está ativa
+
+```http
+GET {{baseUrl}}/health
+```
+
+Resposta esperada (`200`):
+
+```json
+{ "status": "ok" }
+```
+
+### 2. Fazer login como administrador
+
+Crie uma requisição com o método **POST** — usar `GET` nesta rota retorna `404`.
+
+```http
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+```
+
+Na aba **Body**, selecione **raw** e depois **JSON**. Informe o mesmo e-mail e senha definidos nas variáveis `ADMIN_EMAIL` e `ADMIN_PASSWORD` do `.env`:
+
+```json
+{
+  "email": "admin@example.com",
+  "password": "uma-senha-com-ao-menos-8-caracteres"
+}
+```
+
+Resposta esperada (`200`):
+
+```json
+{ "token": "jwt-assinado" }
+```
+
+Copie somente o valor de `token` e salve-o no ambiente do Postman como `adminToken`.
+
+### 3. Validar autenticação
+
+```http
+GET {{baseUrl}}/users/me
+```
+
+Na aba **Authorization**, escolha **Bearer Token** e cole `{{adminToken}}` no campo **Token**. Não escreva `Bearer ` dentro desse campo, pois o Postman o acrescenta automaticamente.
+
+Resposta esperada: `200` com os dados públicos do administrador. A senha não é retornada.
+
+### 4. Validar autorização administrativa (RBAC)
+
+```http
+GET {{baseUrl}}/admin/ping
+```
+
+Use novamente **Authorization → Bearer Token** com `{{adminToken}}`.
+
+Resposta esperada (`200`):
+
+```json
+{ "message": "Administrator access granted." }
+```
+
+Se a resposta for `401 Authentication token is invalid or expired`, confira se o método é **GET**, se a URL é `/admin/ping` e se a aba **Authorization** está configurada na própria requisição. Cole apenas o JWT no campo **Token**, sem aspas e sem espaços extras.
+
+### 5. Validar as restrições de um atendente
+
+Cadastre um usuário comum:
+
+```http
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+```
+
+```json
+{
+  "name": "Atendente Teste",
+  "email": "atendente@example.com",
+  "password": "SenhaSegura123"
+}
+```
+
+Faça login desse usuário em `POST {{baseUrl}}/auth/login`, salve o token como `attendantToken` e envie:
+
+```http
+GET {{baseUrl}}/admin/ping
+Authorization: Bearer {{attendantToken}}
+```
+
+Resposta esperada: `403`, comprovando que o perfil `ATTENDANT` não acessa recursos administrativos.
+
+### 6. Validar cenários de erro
+
+| Requisição                               | Resultado esperado                   |
+| ---------------------------------------- | ------------------------------------ |
+| `GET /users/me` sem token                | `401`                                |
+| `POST /auth/login` com senha incorreta   | `401`                                |
+| Novo cadastro com e-mail já usado        | `409`                                |
+| `GET /admin/ping` com token de atendente | `403`                                |
+| `GET /auth/login`                        | `404` (a rota aceita somente `POST`) |
 
 ## Arquitetura
 
