@@ -37,7 +37,7 @@ function getPort(value: string | undefined, fallback: number): number {
 }
 
 export const env: EnvironmentConfig = {
-  port: getPort(process.env.PORT, 3333),
+  port: getPort(process.env.PORT, 3000),
   database: {
     host: getRequiredEnvironmentVariable('DATABASE_HOST'),
     port: getPort(process.env.DATABASE_PORT, 5432),
